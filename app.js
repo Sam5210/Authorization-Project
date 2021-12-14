@@ -68,7 +68,14 @@ app.route("/register")
                 }
                 else{
                     passport.authenticate("local")(request, response, function(){
-                        response.redirect("/secrets");
+                        let prevSession = request.session;
+                        request.session.regenerate(function(err){
+                            if(err){console.log(err);}
+                            else{
+                                Object.assign(request.session, prevSession);
+                                response.redirect("/secrets");
+                            }
+                        });
                     });
                 }
             }
@@ -80,7 +87,31 @@ app.route("/login")
         response.render("login");
     })
     .post(async function(request, response){
-        
+        const user = new User ({
+            username: request.body.username,
+            password: request.body.password,
+        });
+        request.login(user, function(error){
+            if(error){console.log(error);}
+            else{
+                passport.authenticate("local")(request, response, function(){
+                    let prevSession = request.session;
+                    request.session.regenerate(function(err){
+                        if(err){console.log(err);}
+                        else{
+                            Object.assign(request.session, prevSession);
+                            response.redirect("/secrets");
+                        }
+                    });
+                });
+            }
+        });
+    });
+
+app.route("/logout")
+    .get(function(request, response){
+        request.logout();
+        response.redirect("/");
     });
 
 app.listen(3000);
